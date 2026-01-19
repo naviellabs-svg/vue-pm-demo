@@ -32,7 +32,7 @@ await getProject(slug)
       <TableHead>
         Status
       </TableHead>
-      <TableCell><AppInPlaceEditStatus v-model="project.status"/></TableCell>
+      <TableCell><AppInPlaceEditStatus v-model="project.status" @commit="updateProject"/></TableCell>
     </TableRow>
     <TableRow>
       <TableHead> Collaborators </TableHead>

@@ -1169,125 +1169,528 @@ This creates a "ghost" input that only shows styling when focused, perfect for i
 - Create similar components for other input types (textarea, number, etc.)
 - Add keyboard shortcuts (Enter to save, Escape to cancel)
 
-## lesson 8.107
+## Lesson 8.107 - Add Commit Event to In-Place Edit Component
 
-### AppInPlaceEditText.vue
+> **Purpose:** Add a `commit` event that fires when the user finishes editing (on blur or Enter key), allowing the parent component to save changes to the database. This provides a clean separation between editing and saving.
 
-craete emit to parent when user focus away to store project name in databse.
+### Overview
 
-- [ ] crate emit when blur `<script setup lang="ts">
+The `AppInPlaceEditText` component currently only handles two-way data binding with `v-model`. To save changes to the database, we need to know when the user has finished editing. By emitting a `commit` event on blur and Enter key press, the parent component can trigger a save operation at the right moment.
 
-  const value = defineModel()
+**User Flow:**
 
-  defineEmits(['commit'])
-  </script>
-  <template>
+1. User clicks on text field → enters edit mode
+2. User types changes → `v-model` updates the reactive value
+3. User presses Enter or clicks away → `commit` event fires
+4. Parent component receives `commit` → saves to database
+
+---
+
+### Step 1: Add Commit Emit to Component
+
+**File:** `src/components/AppInPlaceEdit/AppInPlaceEditText.vue`
+
+> **Purpose:** Emit a `commit` event when the user finishes editing (blur or Enter key).
+
+#### Tasks
+
+- [x] Define `commit` emit using `defineEmits`
+- [x] Add `@blur` handler to emit `commit` when user clicks away
+- [x] Add `@keypress.enter` handler to blur input (which triggers commit) when Enter is pressed
+
+**Implementation:**
+
+```vue
+<script setup lang="ts">
+const value = defineModel<string>()
+
+defineEmits(['commit'])
+</script>
+
+<template>
   <input
-  class="w-full p-1 bg-transparent focus:outline-none focus:border-none focus:bg-gray-800 focus:rounded-md"
-  type="text"
-  v-model="value"
-  @blur="$emit('commit')"
-  @keypress.enter="($event.target as HTMLInputElement).blur()"
+    v-model="value"
+    class="w-full p-1 bg-transparent focus:outline-none focus:border-none focus:bg-gray-800 focus:rounded-md"
+    type="text"
+    @blur="$emit('commit')"
+    @keypress.enter="($event.target as HTMLInputElement).blur()"
   />
-  </template>`
+</template>
+```
 
-### projecrs/slug.vue
+**Key Points:**
 
-- [ ] add @commiy in parent `<AppInPlaceEditText
-      v-model="project.name"
-      @commit="console.log('changed')"`
+- **`defineEmits(['commit'])`:** Declares that this component can emit a `commit` event
+- **`@blur="$emit('commit')`:** Fires commit when input loses focus (user clicks away)
+- **`@keypress.enter`:** When Enter is pressed, programmatically blur the input, which triggers the `@blur` handler
+- **Type assertion:** `($event.target as HTMLInputElement)` ensures TypeScript knows we're working with an input element
 
-## Lesson - 8.108 - Update Project Title in the Database
+**Why blur on Enter?**
 
-### projects.ts
+- Reuses the same `@blur` handler logic
+- Ensures consistent behavior (both blur and Enter trigger commit)
+- Automatically removes focus, providing visual feedback
 
-- [ ] crate new function and return `const updateProject = async() => {
+---
 
+### Step 2: Handle Commit in Parent Component
 
-  }
+**File:** `src/pages/projects/[slug].vue`
 
-  return {
-    projects,
-    getProjects,
-    getProject,
-    project,
-    updateProject
-  }
-})`
+> **Purpose:** Listen for the `commit` event and trigger a save operation (or log for testing).
 
-### projects/slug.vue
+#### Tasks
 
-- [ ]  destruct updateproject from projesctloader `const { getProject, upadteProject } = projectsLoader`
-- [ ] use it instead of console.log `<TableCell>
-        <AppInPlaceEditText
-        v-model="project.name"
-        @commit="updateProject"
-        />
-      </TableCell>`
+- [x] Add `@commit` event handler to `AppInPlaceEditText` component
+- [x] Connect to a handler function (initially `console.log` for testing)
 
-### supaqueries.ts 
-- [ ] add new query `export const updateProjectQuery = (updatedProject = {}, id: number) => {
+**Implementation:**
+
+```vue
+<template>
+  <Table v-if="project">
+    <TableRow>
+      <TableHead> Name </TableHead>
+      <TableCell>
+        <AppInPlaceEditText v-model="project.name" @commit="console.log('changed')" />
+      </TableCell>
+    </TableRow>
+    <!-- ... rest of table ... -->
+  </Table>
+</template>
+```
+
+**Explanation:**
+
+- **`@commit`:** Listens for the commit event from the child component
+- **Handler:** Initially logs to console for testing; will be replaced with `updateProject` in next lesson
+- **Timing:** Event fires after user finishes editing, not on every keystroke
+
+---
+
+### Notes / Learnings
+
+#### Why Separate Commit from v-model?
+
+- **Performance:** Don't save on every keystroke (would create many database calls)
+- **User Experience:** Save only when user is done editing (better UX)
+- **Flexibility:** Parent can decide what to do on commit (save, validate, etc.)
+- **Separation of Concerns:** Component handles editing, parent handles persistence
+
+#### Event Flow
+
+```
+User types → v-model updates → reactive value changes
+User presses Enter/blurs → @blur fires → $emit('commit')
+Parent receives @commit → calls handler → saves to database
+```
+
+#### Gotchas & Solutions
+
+1. **Enter Key:** Must blur the input programmatically; Enter key doesn't naturally blur
+2. **Type Safety:** Use type assertion for `event.target` when accessing input methods
+3. **Multiple Commits:** If user rapidly blurs/focuses, multiple commits may fire (consider debouncing)
+4. **Validation:** Add validation in commit handler before saving (check for empty values, etc.)
+
+#### When to Use Commit Pattern
+
+- ✅ **Use commit events when:**
+  - You need to save data to a database/API
+  - You want to validate before saving
+  - You need to show loading states during save
+  - You want to batch multiple edits before saving
+
+- ❌ **Don't use commit when:**
+  - Changes should save immediately on every keystroke
+  - You're working with local-only state
+  - The component handles its own persistence
+
+#### Next Steps
+
+- Replace `console.log` with actual save function
+- Add loading state during save
+- Add error handling for failed saves
+- Consider adding validation before commit
+
+## Lesson 8.108 - Update Project Title in the Database
+
+> **Purpose:** Create a function to persist project changes to the database. When users edit project fields and commit their changes, the updates are saved to Supabase, ensuring data persistence across sessions.
+
+### Overview
+
+Now that we can detect when users finish editing (via the `commit` event), we need to actually save those changes to the database. This lesson creates:
+
+1. A Supabase query function to update projects
+2. A store function that extracts only the project properties (excluding related data like tasks)
+3. Connection between the commit event and the save function
+
+**Data Flow:**
+
+1. User edits project name → `v-model` updates `project.name`
+2. User presses Enter/blurs → `commit` event fires
+3. `updateProject()` called → extracts project properties
+4. Supabase query updates database → changes persisted
+
+---
+
+### Step 1: Create Update Query Function
+
+**File:** `src/utils/supaQueries.ts`
+
+> **Purpose:** Create a reusable Supabase query function to update project records in the database.
+
+#### Tasks
+
+- [x] Create `updateProjectQuery` function that accepts updated project data and project ID
+- [x] Use Supabase's `.update()` method to modify the project record
+- [x] Use `.eq('id', id)` to target the specific project
+
+**Implementation:**
+
+```typescript
+export const updateProjectQuery = (updatedProject = {}, id: number) => {
   return supabase.from('projects').update(updatedProject).eq('id', id)
-}`
+}
+```
 
-### projects.ts
-- [ ] `const updateProject = async() => {
-  if(!project.value) return
+**Key Points:**
 
-  const {tasks, id,   ...projectProperties} = project.value
+- **Parameters:**
+  - `updatedProject`: Object containing only the fields to update (e.g., `{ name: 'New Name' }`)
+  - `id`: The project's ID to identify which record to update
+- **Return Value:** Returns a Supabase query promise (can be awaited for error handling)
+- **Partial Updates:** Only updates the fields provided in `updatedProject` object
+
+---
+
+### Step 2: Create Update Function in Store
+
+**File:** `src/stores/loaders/projects.ts`
+
+> **Purpose:** Create a function that extracts project properties (excluding related data) and calls the update query.
+
+#### Tasks
+
+- [x] Create `updateProject` async function
+- [x] Check if `project.value` exists before proceeding
+- [x] Destructure to separate project properties from related data (tasks, id)
+- [x] Call `updateProjectQuery` with project properties and ID
+- [x] Export `updateProject` from the store
+
+**Implementation:**
+
+```typescript
+const updateProject = async () => {
+  if (!project.value) return
+
+  // Extract only project properties, exclude tasks and id
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { tasks, id, ...projectProperties } = project.value
 
   await updateProjectQuery(projectProperties, project.value.id)
+}
 
-  }`
+return {
+  projects,
+  getProjects,
+  getProject,
+  project,
+  updateProject // Export the new function
+}
+```
 
-  ## Lesson - 8.109 
+**Key Points:**
 
-  ### projects/slug.vue
-  - [ ] use component to update description `<TableHead> Description </TableHead>
+- **Null Check:** `if (!project.value) return` prevents errors when no project is loaded
+- **Destructuring:** `{ tasks, id, ...projectProperties }` separates:
+  - `tasks`: Related data (not part of projects table)
+  - `id`: Used separately as the query identifier
+  - `projectProperties`: All other fields (name, description, status, etc.)
+- **Why exclude tasks?** Tasks are in a separate table; we only update project fields
+- **Why exclude id?** ID is used as the query parameter, not as data to update
+
+**What gets updated:**
+
+```typescript
+// If project.value is:
+{
+  id: 1,
+  name: 'My Project',
+  description: 'Description',
+  status: 'in-progress',
+  tasks: [...]
+}
+
+// projectProperties becomes:
+{
+  name: 'My Project',
+  description: 'Description',
+  status: 'in-progress'
+  // tasks and id are excluded
+}
+```
+
+---
+
+### Step 3: Connect Commit Event to Update Function
+
+**File:** `src/pages/projects/[slug].vue`
+
+> **Purpose:** Replace the console.log handler with the actual `updateProject` function.
+
+#### Tasks
+
+- [x] Destructure `updateProject` from `projectsLoader`
+- [x] Replace `@commit="console.log('changed')"` with `@commit="updateProject"`
+
+**Implementation:**
+
+```typescript
+<script setup lang="ts">
+const { slug } = useRoute('/projects/[slug]').params
+
+const projectsLoader = useProjectsStore()
+const { project } = storeToRefs(projectsLoader)
+const { getProject, updateProject } = projectsLoader // Add updateProject
+
+// ... rest of script
+</script>
+
+<template>
+  <Table v-if="project">
+    <TableRow>
+      <TableHead> Name </TableHead>
       <TableCell>
-        <AppInPlaceEditText v-model="project.description" @commit="updateproject" />
-      </TableCell>`
+        <AppInPlaceEditText
+          v-model="project.name"
+          @commit="updateProject" // Replace console.log
+        />
+      </TableCell>
+    </TableRow>
+    <!-- ... rest of table ... -->
+  </Table>
+</template>
+```
 
-  ### AppInPlaceEditStatus.vue
+**Before:**
 
-  - [ ]  Create the new component in AppInPlaceEdit 
-  - [ ]  ```<script setup lang="ts"></script>
+```vue
+@commit="console.log('changed')"
+```
+
+**After:**
+
+```vue
+@commit="updateProject"
+```
+
+**Flow:**
+
+1. User edits name → `project.name` updates via `v-model`
+2. User presses Enter/blurs → `commit` event fires
+3. `updateProject()` called → extracts properties, updates database
+4. Changes persisted → user sees updated data
+
+---
+
+### Notes / Learnings
+
+#### Why Destructure and Exclude Related Data?
+
+- **Database Structure:** Tasks are in a separate table with foreign key relationship
+- **Supabase Behavior:** Trying to update related data can cause errors or unexpected behavior
+- **Clean Updates:** Only update fields that belong to the projects table
+- **Type Safety:** TypeScript helps catch if you try to update invalid fields
+
+#### Error Handling Considerations
+
+The current implementation doesn't handle errors. Consider adding:
+
+```typescript
+const updateProject = async () => {
+  if (!project.value) return
+
+  const { tasks, id, ...projectProperties } = project.value
+
+  const { error, status } = await updateProjectQuery(projectProperties, project.value.id)
+
+  if (error) {
+    useErrorStore().setError({ error, customCode: status })
+    return
+  }
+
+  // Optionally: invalidate cache or refetch to ensure UI is in sync
+}
+```
+
+#### Gotchas & Solutions
+
+1. **TypeScript Unused Variables:** The `eslint-disable` comment is needed because we destructure `tasks` and `id` but don't use them directly
+2. **Reactive Updates:** After updating, the local `project.value` is already updated via `v-model`, so UI stays in sync
+3. **Cache Invalidation:** Consider clearing the `useMemoize` cache after update to ensure fresh data on next fetch
+4. **Optimistic Updates:** Current implementation is optimistic (UI updates before DB confirms) - consider rollback on error
+
+#### When to Update vs Create New Query
+
+- **Use `.update()`** when modifying existing records
+- **Use `.insert()`** when creating new records
+- **Use `.upsert()`** when you want insert-or-update behavior
+
+#### Next Steps
+
+- Add error handling for failed updates
+- Add loading state during save operation
+- Add success feedback (toast notification)
+- Consider cache invalidation after successful update
+- Add validation before saving (e.g., required fields)
+
+## Lesson 8.109 - Create a Toggle Component for the Project Status
+
+> **Purpose:** Create a visual status indicator component that displays different icons based on project status (completed vs in-progress). This provides an intuitive, clickable way to view and toggle project status using visual icons instead of text.
+
+### Overview
+
+Instead of displaying status as plain text, we create a component that shows:
+
+- **Green checkmark icon** for completed projects
+- **Gray dot icon** for in-progress projects
+
+The component uses `defineModel` for two-way binding, making it easy to integrate with the project status field. It can be used both in the project detail page and in the projects table.
+
+**Visual Design:**
+
+- Uses Iconify icons for consistent, scalable graphics
+- Color-coded: green for completed, gray for in-progress
+- Cursor pointer indicates it's interactive (ready for future toggle functionality)
+
+---
+
+### Step 1: Create the Status Component
+
+**File:** `src/components/AppInPlaceEdit/AppInPlaceEditStatus.vue`
+
+> **Purpose:** Create a component that displays different icons based on the status value using `defineModel` for two-way binding.
+
+#### Tasks
+
+- [x] Create new component file `AppInPlaceEditStatus.vue`
+- [x] Use `defineModel` with union type for status values
+- [x] Add conditional rendering based on status value
+- [x] Use Iconify icons for visual indicators
+- [x] Add styling for cursor and icon sizing
+
+**Implementation:**
+
+```vue
+<script setup lang="ts">
+const value = defineModel<'in-progress' | 'completed'>()
+</script>
 
 <template>
   <div class="text-2xl cursor-pointer">
-     <iconify-icon icon="lucide:circle-check" class="text-green-500" />
-     <iconify-icon icon="lucide:circle-dot" class="text-gray-500"/>
+    <iconify-icon v-if="value === 'completed'" icon="lucide:circle-check" class="text-green-500" />
+    <iconify-icon v-else icon="lucide:circle-dot" class="text-gray-500" />
   </div>
-</template>```
+</template>
+```
 
-  ### projects/slug.vue
+**Key Points:**
 
-  - [ ] use staujtus edit component `<TableHead>
-        Status
-      </TableHead>
-      <TableCell><AppInPlaceEditStatus /></TableCell>`
+- **Type Safety:** `defineModel<'in-progress' | 'completed'>()` restricts the model to only valid status values
+- **Conditional Rendering:** `v-if="value === 'completed'"` shows checkmark for completed, dot for in-progress
+- **Icons:** Uses Iconify's Lucide icon set (circle-check and circle-dot)
+- **Styling:**
+  - `text-2xl`: Large icon size for visibility
+  - `cursor-pointer`: Indicates the component is interactive
+  - Color classes: `text-green-500` for completed, `text-gray-500` for in-progress
 
-  ### AppInPlaceStatus.vue
+**Icon Reference:**
 
-  - [ ]  update template to be reactive based on conditions `<template>
-  <div class="text-2xl cursor-pointer">
-     <iconify-icon
-     v-if="value === 'completed'"
-     icon="lucide:circle-check"
-     class="text-green-500" />
-     <iconify-icon
-     v-else
-     icon="lucide:circle-dot"
-     class="text-gray-500"/>
-  </div>
-</template>`
+- `lucide:circle-check`: Filled circle with checkmark (✅)
+- `lucide:circle-dot`: Circle with dot in center (⚫)
 
-### projects/slug.vue
+---
 
-- [ ] add v-model to bind status ` <TableCell><AppInPlaceEditStatus v-model="project.status"/></TableCell>`
+### Step 2: Use Component in Project Detail Page
 
-### projectsColumns.ts 
-- [ ] update stusts with ```{
+**File:** `src/pages/projects/[slug].vue`
+
+> **Purpose:** Replace static status text with the new visual status component.
+
+#### Tasks
+
+- [x] Import or use `AppInPlaceEditStatus` component (auto-imported if configured)
+- [x] Replace static status display with `<AppInPlaceEditStatus />`
+- [x] Bind `v-model` to `project.status` for two-way data binding
+
+**Implementation:**
+
+```vue
+<template>
+  <Table v-if="project">
+    <!-- ... other rows ... -->
+    <TableRow>
+      <TableHead> Description </TableHead>
+      <TableCell>
+        <AppInPlaceEditText v-model="project.description" @commit="updateProject" />
+      </TableCell>
+    </TableRow>
+    <TableRow>
+      <TableHead> Status </TableHead>
+      <TableCell>
+        <AppInPlaceEditStatus v-model="project.status" />
+      </TableCell>
+    </TableRow>
+    <!-- ... rest of table ... -->
+  </Table>
+</template>
+```
+
+**Before (Static Text):**
+
+```vue
+<TableHead> {{ project.status }}</TableHead>
+<TableCell>In progress</TableCell>
+```
+
+**After (Visual Component):**
+
+```vue
+<TableHead> Status </TableHead>
+<TableCell>
+  <AppInPlaceEditStatus v-model="project.status" />
+</TableCell>
+```
+
+**Benefits:**
+
+- **Visual Clarity:** Icons are more intuitive than text
+- **Consistent Design:** Same component used in table and detail view
+- **Reactive:** Changes to `project.status` automatically update the icon
+
+---
+
+### Step 3: Use Component in Projects Table
+
+**File:** `src/utils/tableColumns/projectsColumns.ts`
+
+> **Purpose:** Replace text status display in the table with the visual status component using render functions.
+
+#### Tasks
+
+- [x] Import `AppInPlaceEditStatus` component
+- [x] Update the status column's `cell` function to use the component
+- [x] Use `h()` render function to create the component instance
+- [x] Pass `modelValue` prop with the row's status value
+
+**Implementation:**
+
+```typescript
+import AppInPlaceEditStatus from '@/components/AppInPlaceEdit/AppInPlaceEditStatus.vue'
+
+export const columns = (collabs: Ref<GroupedCollabs>): ColumnDef<Projects[0]>[] => [
+  // ... other columns ...
+  {
     accessorKey: 'status',
     header: () => h('div', { class: 'text-left' }, 'Status'),
     cell: ({ row }) => {
@@ -1297,4 +1700,98 @@ craete emit to parent when user focus away to store project name in databse.
         h(AppInPlaceEditStatus, { modelValue: row.original.status })
       )
     }
+  }
+  // ... rest of columns ...
+]
+```
+
+**Key Points:**
+
+- **Render Function:** Uses `h()` to programmatically create the component
+- **Props:** Passes `modelValue` prop (required for `defineModel` components in render functions)
+- **Container:** Wraps in a `div` for consistent styling with other columns
+- **Reactive:** The component will reactively update if the status changes
+
+**Note:** In render functions, you must pass `modelValue` explicitly instead of using `v-model` (which is template-only syntax).
+
+---
+
+### Notes / Learnings
+
+#### Why Use Icons Instead of Text?
+
+- **Visual Recognition:** Icons are processed faster by the brain than text
+- **Space Efficient:** Icons take less space than text labels
+- **Language Agnostic:** Icons work across languages
+- **Consistent Design:** Visual indicators create a more polished UI
+
+#### defineModel with Union Types
+
+```typescript
+const value = defineModel<'in-progress' | 'completed'>()
+```
+
+- **Type Safety:** TypeScript ensures only valid status values are accepted
+- **Autocomplete:** IDE will suggest only valid values
+- **Runtime Safety:** Prevents invalid status values from being set
+
+#### Conditional Rendering Pattern
+
+```vue
+<iconify-icon v-if="value === 'completed'" ... />
+<iconify-icon v-else ... />
+```
+
+- **Mutually Exclusive:** Only one icon shows at a time
+- **Clear Logic:** Easy to understand which icon shows for which status
+- **Extensible:** Easy to add more status values in the future
+
+#### Gotchas & Solutions
+
+1. **Render Functions:** Must use `modelValue` prop, not `v-model` when using `h()`
+2. **Type Definition:** Union type must match database enum values exactly
+3. **Icon Loading:** Ensure Iconify is configured and icons are available
+4. **Click Handler:** Currently just displays status; add `@click` handler for toggle functionality in future
+
+#### When to Use Visual Status Indicators
+
+- ✅ **Use icons when:**
+  - Status has clear visual representation (completed, pending, etc.)
+  - You want to save space in tables/lists
+  - You want consistent design across the app
+  - Status values are limited (2-4 options)
+
+- ❌ **Use text when:**
+  - Status values are numerous or complex
+  - You need detailed status descriptions
+  - Accessibility requires text labels
+  - Status values are not standardized
+
+#### Next Steps
+
+- Add click handler to toggle status between values
+- Add commit event to save status changes to database
+- Add loading state during status updates
+- Consider adding tooltips showing status text on hover
+- Add animation when status changes
+
+## Lesson 8.110 Update the Project Status in the Database
+
+### AppInPlaceEditStatus.vue
+- [ ] add ne var const toggleValue = () => {
+    value.value = value.value === 'completed' ? 'in-progress' : 'completed
+  }
+- [ ] add click event <div class="text-2xl cursor-pointer" @click="toggleValue">
+- [ ] add emit ```const emit = defineEmits(['commit'])
+
+  const toggleValue = () => {
+    value.value = value.value === 'completed' ? 'in-progress' : 'completed'
+    emit('commit')
   }```
+
+
+### projects/slug.vue
+  - [ ] trigger commit in parent  `<TableHead>
+        Status
+      </TableHead>
+      <TableCell><AppInPlaceEditStatus v-model="project.status" @commit="updateProject"/></TableCell>`
