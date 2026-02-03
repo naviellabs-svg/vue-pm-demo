@@ -2020,38 +2020,520 @@ value.value = statuses[nextIndex]
 - Consider adding confirmation for critical status changes
 
 
-## Lesson 8.111 - 
+## Lesson 8.111 - Use Vue.js Props Destructure to Assign Default Values for Props
 
-### AppInPlaceEditStatus.vue
+> **Purpose:** Add a `readonly` prop to the status component to prevent editing in certain contexts (like the projects table), while allowing editing in the project detail page. Use props destructuring with default values for clean, type-safe prop handling.
 
-- [ ] add new var for read only sttus tomake status not ediyble in project viewe only inside spesifik project page
+### Overview
 
-```const readonly = true
+The status component should be editable in the project detail page but read-only in the projects table. By adding a `readonly` prop with a default value using destructuring, we can control when the toggle functionality is available. This provides flexibility while maintaining a clean API.
 
-const toggleValue = () => {
-if (readonly) return
-```
+**Use Cases:**
+- **Projects Table:** Status is read-only (display only)
+- **Project Detail Page:** Status is editable (can toggle)
 
-- [ ] use destruct instead 
-```
+---
+
+### Step 1: Add Readonly Prop with Default Value
+
+**File:** `src/components/AppInPlaceEdit/AppInPlaceEditStatus.vue`
+
+> **Purpose:** Add a `readonly` prop using destructuring with a default value, and prevent toggling when readonly is true.
+
+#### Tasks
+
+- [x] Add `readonly` prop using `defineProps` with optional boolean type
+- [x] Use destructuring with default value: `const { readonly = false } = defineProps<...>()`
+- [x] Update `toggleValue` to check `readonly` and return early if true
+
+**Implementation:**
+
+```vue
+<script setup lang="ts">
+const value = defineModel<'in-progress' | 'completed'>()
+
+const emit = defineEmits(['commit'])
+
 const { readonly = false } = defineProps<{
   readonly?: boolean
 }>()
 
 const toggleValue = () => {
-if (readonly) return
+  if (readonly) return
+
+  value.value = value.value === 'completed' ? 'in-progress' : 'completed'
+  emit('commit')
+}
+</script>
 ```
 
-### projecstColumns.ts add new prop
+**Key Points:**
 
-```accessorKey: 'status',
-    header: () => h('div', { class: 'text-left' }, 'Status'),
-    cell: ({ row }) => {
-      return h(
-        'div',
-        { class: 'text-left font-medium' },
-        h(AppInPlaceEditStatus, { modelValue: row.original.status, readonly: true })
-      )
-    }
-  },
-  ```
+- **Destructuring with Default:** `const { readonly = false } = defineProps<...>()` extracts the prop and sets default to `false`
+- **Optional Prop:** `readonly?: boolean` makes the prop optional (can be omitted)
+- **Default Value:** If `readonly` is not provided, it defaults to `false` (editable)
+- **Early Return:** `if (readonly) return` prevents toggle when readonly is true
+
+**Why destructuring?**
+- Cleaner syntax than accessing `props.readonly`
+- Default value assignment in one line
+- TypeScript infers the type automatically
+
+---
+
+### Step 2: Use Readonly Prop in Projects Table
+
+**File:** `src/utils/tableColumns/projectsColumns.ts`
+
+> **Purpose:** Pass `readonly: true` to the status component in the table to prevent editing.
+
+#### Tasks
+
+- [x] Add `readonly: true` prop when creating `AppInPlaceEditStatus` in render function
+- [x] Keep `modelValue` prop for two-way binding (still needed for display)
+
+**Implementation:**
+
+```typescript
+{
+  accessorKey: 'status',
+  header: () => h('div', { class: 'text-left' }, 'Status'),
+  cell: ({ row }) => {
+    return h(
+      'div',
+      { class: 'text-left font-medium' },
+      h(AppInPlaceEditStatus, {
+        modelValue: row.original.status,
+        readonly: true // Prevents editing in table
+      })
+    )
+  }
+}
+```
+
+**Key Points:**
+
+- **Readonly in Table:** Status in the projects table is display-only
+- **Still Reactive:** `modelValue` is still passed, so status updates are reflected
+- **No Toggle:** Clicking the icon in the table does nothing (readonly prevents toggle)
+
+---
+
+### Step 3: Keep Editable in Project Detail Page
+
+**File:** `src/pages/projects/[slug].vue`
+
+> **Purpose:** Don't pass `readonly` prop (or pass `readonly: false`) to allow editing in the detail page.
+
+#### Tasks
+
+- [x] Use component without `readonly` prop (defaults to `false`)
+- [x] Status remains editable in the detail page
+
+**Implementation:**
+
+```vue
+<template>
+  <Table v-if="project">
+    <!-- ... other rows ... -->
+    <TableRow>
+      <TableHead> Status </TableHead>
+      <TableCell>
+        <AppInPlaceEditStatus
+          v-model="project.status"
+          @commit="updateProject"
+        />
+      </TableCell>
+    </TableRow>
+    <!-- ... rest of table ... -->
+  </Table>
+</template>
+```
+
+**Explanation:**
+
+- **No `readonly` prop:** Since `readonly` defaults to `false`, omitting it makes the component editable
+- **Toggle works:** Users can click to toggle status in the detail page
+- **Saves to database:** `@commit="updateProject"` still fires when status changes
+
+---
+
+### Notes / Learnings
+
+#### Props Destructuring with Defaults
+
+```typescript
+const { readonly = false } = defineProps<{
+  readonly?: boolean
+}>()
+```
+
+**Benefits:**
+- **Cleaner Code:** No need to write `props.readonly` everywhere
+- **Default Value:** Automatically defaults to `false` if not provided
+- **Type Safety:** TypeScript knows `readonly` is a boolean
+- **Optional:** The `?` makes the prop optional
+
+**Alternative (without destructuring):**
+```typescript
+const props = defineProps<{ readonly?: boolean }>()
+// Then use: props.readonly ?? false
+```
+
+#### When to Use Readonly Pattern
+
+- ✅ **Use readonly prop when:**
+  - Component is used in multiple contexts
+  - Some contexts need editing, others don't
+  - You want to prevent accidental edits
+  - You need display-only mode
+
+- ❌ **Don't use readonly when:**
+  - Component is always editable
+  - You can use separate components instead
+  - Readonly behavior is complex (use separate component)
+
+#### Gotchas & Solutions
+
+1. **Default Value:** Must use destructuring to assign default: `const { prop = defaultValue } = defineProps<...>()`
+2. **Optional Props:** Use `?` in type definition: `readonly?: boolean`
+3. **Render Functions:** Must pass prop explicitly: `h(Component, { readonly: true })`
+4. **Type Inference:** TypeScript automatically infers the type from destructuring
+
+#### Props Destructuring vs Regular Props
+
+**With Destructuring:**
+```typescript
+const { readonly = false } = defineProps<{ readonly?: boolean }>()
+// Use: readonly (directly)
+```
+
+**Without Destructuring:**
+```typescript
+const props = defineProps<{ readonly?: boolean }>()
+// Use: props.readonly ?? false
+```
+
+Destructuring is cleaner when you need default values and use the prop frequently.
+
+#### Next Steps
+
+- Consider adding visual indicator when readonly (e.g., different cursor style)
+- Could add tooltip explaining why status is read-only
+- Might want to add other props like `disabled` for different use cases
+- Consider adding `onClick` handler that fires even when readonly (for analytics, etc.)
+
+## Lesson 8.112 - Display Tasks in Project Detail Page with Navigation and Status
+
+> **Purpose:** Replace placeholder task data with real task information, add navigation links to individual task pages, display task status using the `AppInPlaceEditStatus` component (readonly), and improve styling for better user experience. Also add dynamic page title to the user profile page.
+
+### Overview
+
+The project detail page currently shows placeholder text for tasks. This lesson updates it to:
+- Display actual task data from `project.tasks`
+- Make task names clickable links that navigate to individual task pages
+- Show task status using the `AppInPlaceEditStatus` component (readonly mode)
+- Style task table cells with hover effects for better UX
+- Add dynamic page title to the user profile page
+
+**Key Changes:**
+- Replace placeholder text with real task data (`task.name`, `task.due_date`)
+- Add `RouterLink` components for task navigation
+- Use `AppInPlaceEditStatus` for visual status display
+- Improve styling with hover effects and proper spacing
+
+---
+
+### Step 1: Update Tasks Table with Real Data and Navigation
+
+**File:** `src/pages/projects/[slug].vue`
+
+> **Purpose:** Replace placeholder task data with actual task information and make task names clickable links to individual task pages.
+
+#### Tasks
+
+- [x] Replace placeholder text with `{{ task.name }}` for task names
+- [x] Wrap task name in `RouterLink` component for navigation
+- [x] Use route name syntax: `{name: '/tasks/[id]', params: {id: task.id}}`
+- [x] Replace placeholder due date with `{{ task.due_date }}`
+- [x] Add styling classes for hover effects and spacing
+
+**Implementation:**
+
+```vue
+<TableBody>
+  <TableRow v-for="task in project.tasks" :key="task.id">
+    <TableCell class="p-0">
+      <RouterLink
+        class="text-left block hover:bg-muted p-4"
+        :to="{name: '/tasks/[id]', params: {id: task.id}}"
+      >
+        {{ task.name }}
+      </RouterLink>
+    </TableCell>
+    <TableCell>
+      <AppInPlaceEditStatus readonly :modelValue="task.status" />
+    </TableCell>
+    <TableCell>{{ task.due_date }}</TableCell>
+  </TableRow>
+</TableBody>
+```
+
+**Before (Placeholder):**
+
+```vue
+<TableRow v-for="task in project.tasks" :key="task.id">
+  <TableCell>Lorem ipsum dolor sit amet.</TableCell>
+  <TableCell>In progress</TableCell>
+  <TableCell>22/08/2024</TableCell>
+</TableRow>
+```
+
+**After (Real Data with Navigation):**
+
+```vue
+<TableRow v-for="task in project.tasks" :key="task.id">
+  <TableCell class="p-0">
+    <RouterLink
+      class="text-left block hover:bg-muted p-4"
+      :to="{name: '/tasks/[id]', params: {id: task.id}}"
+    >
+      {{ task.name }}
+    </RouterLink>
+  </TableCell>
+  <TableCell>
+    <AppInPlaceEditStatus readonly :modelValue="task.status" />
+  </TableCell>
+  <TableCell>{{ task.due_date }}</TableCell>
+</TableRow>
+```
+
+**Key Points:**
+
+- **RouterLink:** Enables navigation to individual task pages
+- **Route Name:** Using `{name: '/tasks/[id]', params: {id: task.id}}` provides type-safe routing
+- **Styling Classes:**
+  - `class="p-0"` on `TableCell` removes default padding (link handles its own padding)
+  - `class="text-left block hover:bg-muted p-4"` on `RouterLink` provides:
+    - Left-aligned text
+    - Block-level element (full width clickable area)
+    - Hover background color change
+    - Padding for clickable area
+- **Readonly Status:** `readonly` prop prevents editing task status from the project page
+
+---
+
+### Step 2: Display Task Status with AppInPlaceEditStatus Component
+
+**File:** `src/pages/projects/[slug].vue`
+
+> **Purpose:** Replace text status display with the visual `AppInPlaceEditStatus` component in readonly mode.
+
+#### Tasks
+
+- [x] Import or use `AppInPlaceEditStatus` component (auto-imported if configured)
+- [x] Replace text status with `<AppInPlaceEditStatus />` component
+- [x] Pass `readonly` prop to prevent editing
+- [x] Pass `modelValue` prop with `task.status` (note: use `modelValue` not `modelvalue`)
+
+**Implementation:**
+
+```vue
+<TableCell>
+  <AppInPlaceEditStatus readonly :modelValue="task.status" />
+</TableCell>
+```
+
+**Key Points:**
+
+- **Readonly Mode:** `readonly` prop prevents users from toggling status from the project page
+- **Visual Display:** Shows green checkmark for completed, gray dot for in-progress
+- **Prop Name:** Must use `modelValue` (camelCase) not `modelvalue` (lowercase) for Vue props
+- **Reactive:** Status updates automatically when task status changes
+
+**Why readonly?**
+- Tasks should be edited from their individual task pages, not from the project overview
+- Prevents accidental status changes when viewing project details
+- Maintains separation of concerns (project page = view, task page = edit)
+
+---
+
+### Step 3: Add Dynamic Page Title to User Profile Page
+
+**File:** `src/pages/users/[username].vue`
+
+> **Purpose:** Set the page title dynamically based on the user's profile information.
+
+#### Tasks
+
+- [x] Update `usePageStore().pageData.title` to use profile data
+- [x] Use a watcher or computed property to update title when profile loads
+- [x] Display user's full name or username in the title
+
+**Implementation:**
+
+```vue
+<script setup lang="ts">
+import { profileQuery } from '@/utils/supaQueries'
+import type { Tables } from 'database/types'
+
+const { username } = useRoute('/users/[username]').params
+
+const profile = ref<Tables<'profiles'> | null>(null)
+
+const getProfile = async () => {
+  const { data, error, status } = await profileQuery({ column: 'username', value: username })
+
+  if (error) useErrorStore().setError({ error, customCode: status })
+
+  profile.value = data
+}
+
+await getProfile()
+
+// Watch for profile changes to update page title
+watch(
+  () => profile.value?.full_name || profile.value?.username,
+  (name) => {
+    usePageStore().pageData.title = name ? `User: ${name}` : ''
+  }
+)
+</script>
+```
+
+**Before:**
+
+```typescript
+usePageStore().pageData.title = ''
+```
+
+**After:**
+
+```typescript
+watch(
+  () => profile.value?.full_name || profile.value?.username,
+  (name) => {
+    usePageStore().pageData.title = name ? `User: ${name}` : ''
+  }
+)
+```
+
+**Key Points:**
+
+- **Watcher:** Updates title when profile data loads
+- **Fallback:** Uses `full_name` if available, otherwise falls back to `username`
+- **Empty String:** Sets title to empty string if no name is available
+- **Reactive:** Title updates automatically if profile data changes
+
+---
+
+### Notes / Learnings
+
+#### RouterLink with Named Routes
+
+```vue
+<RouterLink :to="{name: '/tasks/[id]', params: {id: task.id}}">
+  {{ task.name }}
+</RouterLink>
+```
+
+**Benefits:**
+- **Type Safety:** Named routes provide better TypeScript support
+- **Maintainability:** Route names are easier to refactor than hardcoded paths
+- **Consistency:** Matches the pattern used elsewhere in the app
+
+**Alternative (path-based):**
+```vue
+<RouterLink :to="`/tasks/${task.id}`">
+  {{ task.name }}
+</RouterLink>
+```
+
+Named routes are preferred for better type safety and maintainability.
+
+#### Styling Task Table Cells
+
+**Cell Padding Strategy:**
+- Remove padding from `TableCell` (`class="p-0"`)
+- Add padding to the `RouterLink` (`class="p-4"`)
+- This makes the entire cell area clickable while maintaining proper spacing
+
+**Hover Effects:**
+- `hover:bg-muted` provides visual feedback when hovering over task links
+- `block` class makes the entire link area clickable (not just text)
+- `text-left` ensures text alignment matches table design
+
+#### AppInPlaceEditStatus in Readonly Mode
+
+**When to Use Readonly:**
+- ✅ Display-only contexts (tables, lists, summaries)
+- ✅ When editing should happen elsewhere (detail pages)
+- ✅ Preventing accidental changes
+- ✅ Maintaining data integrity
+
+**Prop Naming:**
+- Vue props are case-sensitive in templates
+- Use `modelValue` (camelCase) not `modelvalue` (lowercase)
+- TypeScript will catch this error, but it's important to use correct casing
+
+#### Page Title Pattern
+
+**Watcher Pattern:**
+```typescript
+watch(
+  () => data.value?.property,
+  (value) => {
+    usePageStore().pageData.title = value ? `Title: ${value}` : ''
+  }
+)
+```
+
+**Benefits:**
+- Updates automatically when data changes
+- Handles loading states (title updates when data arrives)
+- Provides fallback for missing data
+
+**Alternative (Computed):**
+```typescript
+const pageTitle = computed(() => 
+  profile.value?.full_name 
+    ? `User: ${profile.value.full_name}` 
+    : ''
+)
+
+watch(pageTitle, (title) => {
+  usePageStore().pageData.title = title
+})
+```
+
+#### Gotchas & Solutions
+
+1. **Prop Casing:** Always use `modelValue` (camelCase) in templates, not `modelvalue`
+2. **Cell Padding:** Remove padding from `TableCell` when using custom-styled links inside
+3. **Route Names:** Use named routes for better type safety: `{name: '/tasks/[id]', params: {id: task.id}}`
+4. **Readonly Status:** Remember to pass `readonly` prop when status should not be editable
+5. **Watcher Timing:** Page title watcher should watch the data property, not the route param (data loads asynchronously)
+
+#### When to Use Readonly Components
+
+- ✅ **Use readonly when:**
+  - Displaying data in lists/tables
+  - Showing summary information
+  - Preventing edits in certain contexts
+  - Maintaining data integrity
+
+- ❌ **Don't use readonly when:**
+  - Component is always editable
+  - You need separate edit/view components
+  - Readonly behavior is complex
+
+#### Next Steps
+
+- Add loading states for tasks table
+- Consider adding task creation functionality from project page
+- Add filters/sorting for tasks table
+- Consider adding task count badge
+- Add empty state when project has no tasks
+- Consider adding task due date formatting (relative dates, etc.)
+
+## lesson 8.113 is next
