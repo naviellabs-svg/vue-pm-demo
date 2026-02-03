@@ -1775,23 +1775,283 @@ const value = defineModel<'in-progress' | 'completed'>()
 - Consider adding tooltips showing status text on hover
 - Add animation when status changes
 
-## Lesson 8.110 Update the Project Status in the Database
+## Lesson 8.110 - Update the Project Status in the Database
+
+> **Purpose:** Add toggle functionality to the status component so users can click to change project status, and automatically save changes to the database. This completes the in-place editing pattern for project status.
+
+### Overview
+
+The status component currently only displays the status visually. In this lesson, we add:
+
+1. **Toggle functionality:** Click to switch between 'completed' and 'in-progress'
+2. **Commit event:** Emit when status changes to trigger database save
+3. **Smooth animation:** Transition effect when status changes
+4. **Database persistence:** Connect to `updateProject` function to save changes
+
+**User Flow:**
+
+1. User clicks status icon → `toggleValue()` called
+2. Status toggles between values → `v-model` updates `project.status`
+3. `commit` event fires → parent calls `updateProject()`
+4. Database updated → changes persisted
+
+---
+
+### Step 1: Add Toggle Functionality to Status Component
+
+**File:** `src/components/AppInPlaceEdit/AppInPlaceEditStatus.vue`
+
+> **Purpose:** Add click handler and toggle logic to switch between status values, then emit commit event to trigger save.
+
+#### Tasks
+
+- [x] Define `commit` emit using `defineEmits`
+- [x] Create `toggleValue` function that switches status
+- [x] Add `@click` handler to the container div
+- [x] Emit `commit` event after toggling
+
+**Implementation:**
+
+```vue
+<script setup lang="ts">
+const value = defineModel<'in-progress' | 'completed'>()
+
+const emit = defineEmits(['commit'])
+
+const toggleValue = () => {
+  value.value = value.value === 'completed' ? 'in-progress' : 'completed'
+  emit('commit')
+}
+</script>
+
+<template>
+  <div class="text-2xl cursor-pointer" @click="toggleValue">
+    <iconify-icon v-if="value === 'completed'" icon="lucide:circle-check" class="text-green-500" />
+    <iconify-icon v-else icon="lucide:circle-dot" class="text-gray-500" />
+  </div>
+</template>
+```
+
+**Key Points:**
+
+- **Toggle Logic:** `value.value === 'completed' ? 'in-progress' : 'completed'` switches between the two states
+- **Click Handler:** `@click="toggleValue"` makes the entire icon area clickable
+- **Commit Event:** `emit('commit')` fires after toggle, triggering parent save function
+- **Reactive Update:** Changing `value.value` automatically updates the icon via `v-model`
+
+**How it works:**
+
+```typescript
+// If current status is 'completed'
+value.value === 'completed' ? 'in-progress' : 'completed'
+// Result: 'in-progress'
+
+// If current status is 'in-progress'
+value.value === 'completed' ? 'in-progress' : 'completed'
+// Result: 'completed'
+```
+
+---
+
+### Step 2: Add Transition Animation (Optional Enhancement)
+
+**File:** `src/components/AppInPlaceEdit/AppInPlaceEditStatus.vue`
+
+> **Purpose:** Add smooth transition animation when status changes for better user experience.
+
+#### Tasks
+
+- [x] Wrap icons in `<Transition>` component
+- [x] Add `mode="out-in"` for smooth transition
+- [x] Add CSS transitions for scale animation
+
+**Enhanced Implementation:**
+
+```vue
+<template>
+  <div class="text-2xl cursor-pointer" @click="toggleValue">
+    <Transition mode="out-in">
+      <iconify-icon
+        v-if="value === 'completed'"
+        icon="lucide:circle-check"
+        class="text-green-500"
+        key="completed"
+      />
+      <iconify-icon v-else icon="lucide:circle-dot" class="text-gray-500" key="in-progress" />
+    </Transition>
+  </div>
+</template>
+
+<style scoped>
+.v-enter-active,
+.v-leave-active {
+  transition: transform 0.1s;
+}
+
+.v-enter-from,
+.v-leave-to {
+  transform: scale(0.3);
+}
+</style>
+```
+
+**Key Points:**
+
+- **Transition Component:** Vue's built-in `<Transition>` handles enter/leave animations
+- **Mode "out-in":** Old icon fades out before new icon fades in (prevents overlap)
+- **Key Attribute:** Ensures Vue treats icons as different elements (required for transitions)
+- **Scale Animation:** Icons scale from 30% to 100% for smooth visual feedback
+
+---
+
+### Step 3: Connect Commit Event to Update Function
+
+**File:** `src/pages/projects/[slug].vue`
+
+> **Purpose:** Listen for the `commit` event from the status component and trigger database update.
+
+#### Tasks
+
+- [x] Add `@commit` event handler to `AppInPlaceEditStatus` component
+- [x] Connect to `updateProject` function (already exists from lesson 8.108)
+
+**Implementation:**
+
+```vue
+<template>
+  <Table v-if="project">
+    <!-- ... other rows ... -->
+    <TableRow>
+      <TableHead> Status </TableHead>
+      <TableCell>
+        <AppInPlaceEditStatus v-model="project.status" @commit="updateProject" />
+      </TableCell>
+    </TableRow>
+    <!-- ... rest of table ... -->
+  </Table>
+</template>
+```
+
+**Before:**
+
+```vue
+<AppInPlaceEditStatus v-model="project.status" />
+```
+
+**After:**
+
+```vue
+<AppInPlaceEditStatus v-model="project.status" @commit="updateProject" />
+```
+
+**Flow:**
+
+1. User clicks status icon → `toggleValue()` called
+2. Status toggles → `project.status` updates via `v-model`
+3. `commit` event fires → `updateProject()` called
+4. Database updated → status change persisted
+
+---
+
+### Notes / Learnings
+
+#### Why Toggle Instead of Direct Edit?
+
+- **Limited Options:** Only two status values, so toggle is simpler than dropdown
+- **Quick Action:** One click to change status (faster than opening dropdown)
+- **Visual Feedback:** Icon change provides immediate visual confirmation
+- **Intuitive:** Users understand clicking toggles the state
+
+#### Toggle Pattern
+
+```typescript
+value.value = value.value === 'completed' ? 'in-progress' : 'completed'
+```
+
+This pattern:
+
+- **Checks current value:** Uses ternary operator to determine new value
+- **Switches states:** Always goes to the opposite state
+- **Works for binary states:** Perfect for two-option toggles
+
+**Alternative pattern (if more states):**
+
+```typescript
+const statuses = ['in-progress', 'completed', 'archived'] as const
+const currentIndex = statuses.indexOf(value.value)
+const nextIndex = (currentIndex + 1) % statuses.length
+value.value = statuses[nextIndex]
+```
+
+#### Transition Component Benefits
+
+- **Smooth UX:** Visual feedback makes interactions feel polished
+- **Mode "out-in":** Prevents visual glitches when switching icons
+- **Key Attribute:** Required for Vue to distinguish between different icon elements
+- **CSS Transitions:** Simple scale animation provides subtle feedback
+
+#### Gotchas & Solutions
+
+1. **Key Attribute:** Must add `key` prop to icons for transitions to work correctly
+2. **Mode "out-in":** Prevents both icons showing simultaneously during transition
+3. **Event Timing:** `emit('commit')` happens after toggle, ensuring new value is saved
+4. **Type Safety:** TypeScript ensures only valid status values are set
+
+#### When to Use Toggle vs Other Inputs
+
+- ✅ **Use toggle when:**
+  - Only 2 possible values
+  - Quick action is important
+  - Visual representation is clear
+  - Status is frequently changed
+
+- ❌ **Use dropdown/select when:**
+  - More than 2-3 options
+  - Need to see all options at once
+  - Options have complex names
+  - Status changes are infrequent
+
+#### Next Steps
+
+- Add loading state during save operation
+- Add error handling if save fails
+- Consider adding undo functionality
+- Add keyboard shortcut support (e.g., Space to toggle)
+- Consider adding confirmation for critical status changes
+
+
+## Lesson 8.111 - 
 
 ### AppInPlaceEditStatus.vue
-- [ ] add ne var const toggleValue = () => {
-    value.value = value.value === 'completed' ? 'in-progress' : 'completed
-  }
-- [ ] add click event <div class="text-2xl cursor-pointer" @click="toggleValue">
-- [ ] add emit ```const emit = defineEmits(['commit'])
 
-  const toggleValue = () => {
-    value.value = value.value === 'completed' ? 'in-progress' : 'completed'
-    emit('commit')
-  }```
+- [ ] add new var for read only sttus tomake status not ediyble in project viewe only inside spesifik project page
 
+```const readonly = true
 
-### projects/slug.vue
-  - [ ] trigger commit in parent  `<TableHead>
-        Status
-      </TableHead>
-      <TableCell><AppInPlaceEditStatus v-model="project.status" @commit="updateProject"/></TableCell>`
+const toggleValue = () => {
+if (readonly) return
+```
+
+- [ ] use destruct instead 
+```
+const { readonly = false } = defineProps<{
+  readonly?: boolean
+}>()
+
+const toggleValue = () => {
+if (readonly) return
+```
+
+### projecstColumns.ts add new prop
+
+```accessorKey: 'status',
+    header: () => h('div', { class: 'text-left' }, 'Status'),
+    cell: ({ row }) => {
+      return h(
+        'div',
+        { class: 'text-left font-medium' },
+        h(AppInPlaceEditStatus, { modelValue: row.original.status, readonly: true })
+      )
+    }
+  },
+  ```
