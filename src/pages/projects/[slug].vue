@@ -16,7 +16,9 @@ await getProject(slug)
 
 const { getProfilesByIds } = useCollabs()
 
-const collabs = project.value?.collaborators ? await getProfilesByIds(project.value?.collaborators) : []
+const collabs = project.value?.collaborators
+  ? await getProfilesByIds(project.value?.collaborators)
+  : []
 </script>
 <template>
   <Table v-if="project">
@@ -29,14 +31,14 @@ const collabs = project.value?.collaborators ? await getProfilesByIds(project.va
     <TableRow>
       <TableHead> Description </TableHead>
       <TableCell>
-        <AppInPlaceEditText v-model="project.description" @commit="updateProject" />
+        <AppInPlaceEditTextarea v-model="project.description" @commit="updateProject" />
       </TableCell>
     </TableRow>
     <TableRow>
-      <TableHead>
-        Status
-      </TableHead>
-      <TableCell><AppInPlaceEditStatus v-model="project.status" @commit="updateProject"/></TableCell>
+      <TableHead> Status </TableHead>
+      <TableCell
+        ><AppInPlaceEditStatus v-model="project.status" @commit="updateProject"
+      /></TableCell>
     </TableRow>
     <TableRow>
       <TableHead> Collaborators </TableHead>
@@ -47,7 +49,10 @@ const collabs = project.value?.collaborators ? await getProfilesByIds(project.va
             v-for="collab in collabs"
             :key="collab.id"
           >
-            <RouterLink class="w-full h-full flex items-center justify-center" to="{name: '/users/[username]', params: {username: collab.username}}">
+            <RouterLink
+              class="w-full h-full flex items-center justify-center"
+              to="{name: '/users/[username]', params: {username: collab.username}}"
+            >
               <AvatarImage :src="collab.avatar_url || ''" alt="" />
               <AvatarFallback> </AvatarFallback>
             </RouterLink>
@@ -73,14 +78,15 @@ const collabs = project.value?.collaborators ? await getProfilesByIds(project.va
             <TableRow v-for="task in project.tasks" :key="task.id">
               <TableCell class="p-0">
                 <RouterLink
-                class="text-left block hover:bg-muted p-4"
-                :to="{name: '/tasks/[id]', params: {id: task.id}}">
+                  class="text-left block hover:bg-muted p-4"
+                  :to="{ name: '/tasks/[id]', params: { id: task.id } }"
+                >
                   {{ task.name }}
                 </RouterLink>
-                 </TableCell>
+              </TableCell>
               <TableCell>
-                <AppInPlaceEditStatus readonly :modelvalue="task.status"/>
-                 </TableCell>
+                <AppInPlaceEditStatus readonly :modelvalue="task.status" />
+              </TableCell>
               <TableCell> {{ task.due_date }} </TableCell>
             </TableRow>
           </TableBody>

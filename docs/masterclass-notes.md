@@ -2536,4 +2536,35 @@ watch(pageTitle, (title) => {
 - Add empty state when project has no tasks
 - Consider adding task due date formatting (relative dates, etc.)
 
-## lesson 8.113 is next
+## lesson 8.113 - Use defineModel with Textarea and Adjust the Database Schema
+
+### duplicate AppInplaceEditText.vue and call it ...area
+
+### AppInPlaceTextarea.vue
+- [ ] update code
+```
+<script setup lang="ts">
+const value = defineModel<string>()
+
+defineEmits(['commit'])
+</script>
+<template>
+  <textarea
+    class="w-full p-1 bg-transparent focus:outline-none focus:border-none focus:bg-gray-800 focus:rounded-md"
+    v-model="value"
+    @blur="$emit('commit')"
+  />
+</template>
+```
+### projects/[slug}.vue
+- [ ] change descroption to <AppInPlaceTextarea />
+
+### migrations/schema/projcstts
+- [ ]update to  description text not null default 
+
+### terminal
+-[ ] npm run supabase:login
+- [ ] npm run db:reset
+- [] supabase:types
+- [] npm run db:seed
+-[] can add height 
