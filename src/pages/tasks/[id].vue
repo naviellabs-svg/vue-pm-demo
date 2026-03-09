@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { taskQuery } from '@/utils/supaQueries'
 import type { Task } from '@/utils/supaQueries'
+import type { Collabs } from '@/utils/supaQueries'
 
 const route = useRoute('/tasks/[id]')
 
 const task = ref<Task | null>(null)
+const collabProfiles = ref<Collabs>([])
+
+const { getProfilesByIds } = useCollabs()
 
 watch(
   () => task.value?.name,
@@ -16,9 +20,13 @@ watch(
 const getTask = async () => {
   const { data, error, status } = await taskQuery(route.params.id)
 
-  if (error) useErrorStore().setError({error, customCode: status})
+  if (error) useErrorStore().setError({ error, customCode: status })
 
   task.value = data
+  if (data?.collaborators?.length) {
+    const profiles = await getProfilesByIds(data.collaborators)
+    collabProfiles.value = profiles ?? []
+  }
 }
 
 await getTask()
@@ -38,10 +46,6 @@ await getTask()
     </TableRow>
     <TableRow>
       <TableHead> Project </TableHead>
-      <TableCell>Lorem ipsum</TableCell>
-    </TableRow>
-    <TableRow>
-      <TableHead> Project </TableHead>
       <TableCell> {{ task.projects?.name }} </TableCell>
     </TableRow>
     <TableRow>
@@ -53,13 +57,16 @@ await getTask()
       <TableCell>
         <div class="flex">
           <Avatar
+            v-for="collab in collabProfiles"
+            :key="collab.id"
             class="-mr-4 border border-primary hover:scale-110 transition-transform"
-            v-for="collab in task.collaborators"
-            :key="collab"
           >
-            <RouterLink class="w-full h-full flex items-center justify-center" to="">
-              <AvatarImage src="" alt="" />
-              <AvatarFallback> </AvatarFallback>
+            <RouterLink
+              class="flex h-full w-full items-center justify-center"
+              :to="`/users/${collab.username}`"
+            >
+              <AvatarImage :src="collab.avatar_url || ''" alt="" />
+              <AvatarFallback />
             </RouterLink>
           </Avatar>
         </div>
@@ -67,31 +74,8 @@ await getTask()
     </TableRow>
     <TableRow class="hover:bg-transparent">
       <TableHead class="align-top pt-4"> Comments </TableHead>
-
-      <TableCell>
-        Comments cards goes in here..
-
-        <div class="flex flex-col justify-between p-3 bg-muted my-2 rounded-md">
-          <textarea
-            placeholder="Add your comment.."
-            class="w-full max-w-full overflow-y-auto prose-sm prose border rounded dark:prose-invert hover:border-muted bg-background border-muted p-3"
-          >
-          </textarea>
-          <div class="flex justify-between mt-3">
-            <Button> Comment </Button>
-            <div class="flex gap-4">
-              <button variant="ghost" @click.prevent>
-                <iconify-icon icon="lucide:paperclip"></iconify-icon>
-                <span class="sr-only">Attach file</span>
-              </button>
-              <button variant="ghost" @click.prevent>
-                <iconify-icon icon="lucide:image-up"></iconify-icon>
-
-                <span class="sr-only">Upload image</span>
-              </button>
-            </div>
-          </div>
-        </div>
+      <TableCell class="text-muted-foreground">
+        Coming soon.
       </TableCell>
     </TableRow>
   </Table>

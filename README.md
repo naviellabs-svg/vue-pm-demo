@@ -1,48 +1,87 @@
-# vuejs-masterclass-2024
+# Vue PM Demo
 
-This template should help get you started developing with Vue 3 in Vite.
+**Project & task management SPA** built with Vue 3, Supabase, and Tailwind.
 
-## Recommended IDE Setup
+A full-stack demo app for managing projects and tasks: sign up or log in, create and edit projects (with in-place editing), manage tasks, and view user profiles. Suited as a portfolio piece for Vue, Supabase, and modern front-end work.
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+---
 
-## Recommended Browser Setup
+## What it does
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- **Auth:** Register and log in with Supabase Auth.
+- **Projects:** List projects, open a project, and edit name, description, and status in place.
+- **Tasks:** List your tasks, open task details, see project and collaborators.
+- **Profiles:** View user profiles from project/task collaborator links.
+- **Layout:** Sidebar navigation, responsive layout, and basic error handling.
 
-## Type Support for `.vue` Imports in TS
+---
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+## Tech stack
 
-## Customize configuration
+| Layer   | Technologies |
+|--------|----------------|
+| Frontend | Vue 3, TypeScript, Vite 7, Vue Router (file-based), Pinia, Tailwind CSS 4, TanStack Vue Table, reka-ui, VueUse, Lucide icons |
+| Backend  | Supabase (Auth + PostgreSQL) |
+| Tooling  | ESLint, Prettier, vue-tsc, unplugin-auto-import, unplugin-vue-components, unplugin-vue-router |
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+---
 
-## Project Setup
+## Features
 
-```sh
-npm install
-```
+- Auth (login / register)
+- Projects list and detail with in-place edit
+- Tasks list and detail
+- User profiles
+- Responsive layout
+- Error handling
 
-### Compile and Hot-Reload for Development
+---
 
-```sh
-npm run dev
-```
+## Local setup
 
-### Type-Check, Compile and Minify for Production
+1. **Install dependencies**
+
+   ```sh
+   npm install
+   ```
+
+2. **Environment variables**
+
+   Create a `.env` in the project root with:
+
+   - `VITE_SUPABASE_URL` — your Supabase project URL  
+   - `VITE_SUPABASE_KEY` — your Supabase **anon** (public) key  
+
+   The app uses these for the frontend. The script `database/seed.js` uses `SERVICE_ROLE_KEY` and `TESTING_USER_EMAIL` only for local database seeding; do not use the service role key in the frontend or commit it.
+
+3. **Run the app**
+
+   ```sh
+   npm run dev
+   ```
+
+---
+
+## Build and preview
 
 ```sh
 npm run build
+npm run preview
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+---
 
-```sh
-npm run lint
-```
+## Deploy on Vercel
+
+1. Push the repo to GitHub and [import it in Vercel](https://vercel.com/docs/frameworks/vite).
+2. Use **Vite** as the framework (usually auto-detected). Build: `npm run build`, output: `dist`.
+3. In the Vercel project **Environment Variables**, add:
+   - `VITE_SUPABASE_URL` = your Supabase project URL  
+   - `VITE_SUPABASE_KEY` = your Supabase **anon** key  
+4. Deploy. Your live URL will be something like `vue-pm-demo.vercel.app`.
+
+---
+
+## License
+
+Portfolio demo — use for reference. MIT or similar is fine; do not present as from a course.

@@ -51,7 +51,7 @@ const collabs = project.value?.collaborators
           >
             <RouterLink
               class="w-full h-full flex items-center justify-center"
-              to="{name: '/users/[username]', params: {username: collab.username}}"
+              :to="`/users/${collab.username}`"
             >
               <AvatarImage :src="collab.avatar_url || ''" alt="" />
               <AvatarFallback> </AvatarFallback>
@@ -96,8 +96,8 @@ const collabs = project.value?.collaborators
     <div class="flex-1">
       <h2>Documents</h2>
       <div class="table-container">
-        <p class="text-muted-foreground text-sm font-semibold px-4 py-3">
-          This project doesn't have documents yet...
+        <p class="text-muted-foreground px-4 py-3 text-sm">
+          This project doesn't have documents yet. Coming soon.
         </p>
         <!-- <Table>
           <TableHeader>
