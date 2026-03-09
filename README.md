@@ -1,8 +1,22 @@
 # Vue PM Demo
 
+**Live demo:** [vue-pm-demo.vercel.app](https://vue-pm-demo.vercel.app) *(replace with your Vercel URL after deploy)*
+
 **Project & task management SPA** built with Vue 3, Supabase, and Tailwind.
 
 A full-stack demo app for managing projects and tasks: sign up or log in, create and edit projects (with in-place editing), manage tasks, and view user profiles. Suited as a portfolio piece for Vue, Supabase, and modern front-end work.
+
+---
+
+## Demo credentials
+
+For the live demo or local tryout, use a pre-defined account:
+
+- **Option A (seed):** Run `npm run db:seed` once to create the demo user. Then use the **email** from your `.env` value `TESTING_USER_EMAIL` and **password** `password`.
+- **Option B (Fill demo button):** Set in `.env` (or in Vercel env vars for production):
+  - `VITE_DEMO_EMAIL` — demo user email
+  - `VITE_DEMO_PASSWORD` — demo user password  
+  Then on the login page click **Fill demo** to pre-fill the form and log in with one click.
 
 ---
 
@@ -51,6 +65,7 @@ A full-stack demo app for managing projects and tasks: sign up or log in, create
 
    - `VITE_SUPABASE_URL` — your Supabase project URL  
    - `VITE_SUPABASE_KEY` — your Supabase **anon** (public) key  
+   - Optional: `VITE_DEMO_EMAIL` and `VITE_DEMO_PASSWORD` for the login page **Fill demo** button.
 
    The app uses these for the frontend. The script `database/seed.js` uses `SERVICE_ROLE_KEY` and `TESTING_USER_EMAIL` only for local database seeding; do not use the service role key in the frontend or commit it.
 

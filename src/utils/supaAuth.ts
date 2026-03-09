@@ -8,19 +8,19 @@ export const register = async (formData: RegisterForm) => {
     password: formData.password
   })
 
-  if (error) return console.log(error)
+  if (error) return { error }
 
   if (data.user) {
-    const { error } = await supabase.from('profiles').insert({
+    const { error: profileError } = await supabase.from('profiles').insert({
       id: data.user.id,
       username: formData.username,
       full_name: formData.firstName.concat(' ', formData.lastName)
     })
 
-    if (error) return console.log('profiles err: ', error)
+    if (profileError) return { error: profileError }
   }
 
-  return true
+  return { error: null }
 }
 
 export const login = async (formData: LoginForm) => {
@@ -34,8 +34,6 @@ export const login = async (formData: LoginForm) => {
 
 export const logout = async () => {
   const { error } = await supabase.auth.signOut()
-
-  if (error) return console.log(error)
-
+  if (error) return false
   return true
 }

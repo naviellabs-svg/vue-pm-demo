@@ -15,7 +15,12 @@ const getTasks = async () => {
 }
 
 await getTasks()
+
+const { getGroupedCollabs, groupedCollabs } = useCollabs()
+await getGroupedCollabs(tasks.value ?? [])
+
+const columnsWithCollabs = columns(groupedCollabs)
 </script>
 <template>
-  <DataTable v-if="tasks" :columns="columns" :data="tasks" />
+  <DataTable v-if="tasks" :columns="columnsWithCollabs" :data="tasks" />
 </template>

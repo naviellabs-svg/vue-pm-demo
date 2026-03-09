@@ -35,13 +35,6 @@ export const columns = (collabs: Ref<GroupedCollabs>): ColumnDef<Projects[0]>[] 
     }
   },
   {
-    accessorKey: 'name',
-    header: () => h('div', { class: 'text-left' }, 'Name'),
-    cell: ({ row }) => {
-      return h('div', { class: 'text-left font-medium' }, row.getValue('name'))
-    }
-  },
-  {
     accessorKey: 'collaborators',
     header: () => h('div', { class: 'text-left' }, 'Collaborators'),
     cell: ({ row }) => {

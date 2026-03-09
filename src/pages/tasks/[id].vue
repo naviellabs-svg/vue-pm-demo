@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { taskQuery } from '@/utils/supaQueries'
+import { taskQuery, updateTaskQuery } from '@/utils/supaQueries'
 import type { Task } from '@/utils/supaQueries'
 import type { Collabs } from '@/utils/supaQueries'
 
@@ -29,6 +29,13 @@ const getTask = async () => {
   }
 }
 
+const updateTask = async () => {
+  if (!task.value) return
+  const { projects: _projects, id, ...taskProperties } = task.value
+  await updateTaskQuery(taskProperties as Record<string, unknown>, id)
+  await getTask()
+}
+
 await getTask()
 </script>
 
@@ -36,21 +43,34 @@ await getTask()
   <Table v-if="task">
     <TableRow>
       <TableHead> Name </TableHead>
-      <TableCell> {{ task.name }} </TableCell>
+      <TableCell>
+        <AppInPlaceEditText v-model="task.name" @commit="updateTask" />
+      </TableCell>
     </TableRow>
     <TableRow>
       <TableHead> Description </TableHead>
       <TableCell>
-        {{ task.description }}
+        <AppInPlaceEditTextarea v-model="task.description" @commit="updateTask" />
       </TableCell>
     </TableRow>
     <TableRow>
       <TableHead> Project </TableHead>
-      <TableCell> {{ task.projects?.name }} </TableCell>
+      <TableCell>
+        <RouterLink
+          v-if="task.projects?.slug"
+          :to="`/projects/${task.projects.slug}`"
+          class="font-medium hover:underline"
+        >
+          {{ task.projects.name }}
+        </RouterLink>
+        <span v-else class="text-muted-foreground">—</span>
+      </TableCell>
     </TableRow>
     <TableRow>
       <TableHead> Status </TableHead>
-      <TableCell>{{ task.status }}</TableCell>
+      <TableCell>
+        <AppInPlaceEditStatus v-model="task.status" @commit="updateTask" />
+      </TableCell>
     </TableRow>
     <TableRow>
       <TableHead> Collaborators </TableHead>
@@ -72,11 +92,31 @@ await getTask()
         </div>
       </TableCell>
     </TableRow>
-    <TableRow class="hover:bg-transparent">
-      <TableHead class="align-top pt-4"> Comments </TableHead>
-      <TableCell class="text-muted-foreground">
-        Coming soon.
-      </TableCell>
-    </TableRow>
   </Table>
+
+  <section v-if="task" class="mt-10 flex flex-col md:flex-row gap-5 justify-between grow">
+    <div class="flex-1">
+      <h2>Comments</h2>
+      <div class="table-container">
+        <p class="text-muted-foreground px-4 py-3 text-sm">
+          Coming soon.
+        </p>
+      </div>
+    </div>
+  </section>
 </template>
+
+<style>
+@reference "@/assets/index.css"
+th {
+  @apply w-[100px];
+}
+
+h2 {
+  @apply mb-4 text-lg font-semibold w-fit;
+}
+
+.table-container {
+  @apply overflow-hidden overflow-y-auto rounded-md bg-slate-900 h-80;
+}
+</style>

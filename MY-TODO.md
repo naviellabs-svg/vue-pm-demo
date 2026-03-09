@@ -14,25 +14,27 @@ Do these steps yourself. Code cleanup and README are already done.
 ## 2. Push to GitHub
 
 - [x] Create a **new** repo on GitHub (e.g. `vue-pm-demo` or `taskflow-demo`).
-- [ ] In this folder, run:
+- [x] If `origin` already points to another repo, point it at your new repo:
   ```bash
-  git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO.git
-  git add .
-  git commit -m "Portfolio demo: Vue PM app with cleanup and README"
+  git remote set-url origin https://github.com/naviellabs-svg/vue-pm-demo.git
+  ```
+- [x] Then push:
+  ```bash
   git push -u origin main
   ```
   (Use `master` if that’s your default branch.)
+- **If push was rejected:** Your `origin` was still `vuejs-masterclass-2024-edition`. After `set-url` to `vue-pm-demo`, push again. If the new repo is empty, it will succeed.
 
 ---
 
 ## 3. Deploy on Vercel
 
-- [ ] In [Vercel](https://vercel.com): **Add New Project** → Import your GitHub repo.
-- [ ] Framework: **Vite**. Build: `npm run build`. Output: `dist`.
-- [ ] Add **Environment Variables**:
+- [x] In [Vercel](https://vercel.com): **Add New Project** → Import your GitHub repo.
+- [x] Framework: **Vite**. Build: `npm run build`. Output: `dist`.
+- [x] Add **Environment Variables**:
   - `VITE_SUPABASE_URL` = your Supabase project URL
   - `VITE_SUPABASE_KEY` = your Supabase **anon** key
-- [ ] Deploy and note your **live URL** (e.g. `vue-pm-demo.vercel.app`).
+- [x] Deploy and note your **live URL** (e.g. `vue-pm-demo.vercel.app`).
 
 ---
 

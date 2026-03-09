@@ -6,21 +6,19 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach(async (to, from) => {
+const publicPaths = ['/', '/login', '/register', '/readme']
+
+router.beforeEach(async (to) => {
   const authStore = useAuthStore()
   await authStore.getSession()
-  const isAuthPage = ['/login', '/register'].includes(to.path)
+  const isPublic = publicPaths.includes(to.path)
 
-  if (!authStore.user && !isAuthPage) {
-    return {
-      name: '/login'
-    }
+  if (!authStore.user && !isPublic) {
+    return { path: '/' }
   }
 
-  if (authStore.user && isAuthPage) {
-    return {
-      name: '/'
-    }
+  if (authStore.user && (to.path === '/' || to.path === '/login' || to.path === '/register')) {
+    return { path: '/projects' }
   }
 })
 export default router

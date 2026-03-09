@@ -22,9 +22,16 @@ watchDebounced(
 const signin = async () => {
   const { error } = await login(formData.value)
 
-  if (!error) return router.push('/')
+  if (!error) return router.push('/projects')
 
   handelServerError(error)
+}
+
+const fillDemo = () => {
+  const email = import.meta.env.VITE_DEMO_EMAIL as string | undefined
+  const password = import.meta.env.VITE_DEMO_PASSWORD as string | undefined
+  if (email) formData.value.email = email
+  if (password) formData.value.password = password
 }
 </script>
 
@@ -80,6 +87,14 @@ const signin = async () => {
             <li class="list-disc">{{ serverError }}</li>
           </ul>
           <Button type="submit" class="w-full"> Login </Button>
+          <Button
+            type="button"
+            variant="outline"
+            class="w-full"
+            @click="fillDemo"
+          >
+            Fill demo
+          </Button>
         </form>
         <div class="mt-4 text-sm text-center">
           Don't have an account?

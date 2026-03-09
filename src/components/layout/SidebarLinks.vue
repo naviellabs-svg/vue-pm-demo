@@ -10,7 +10,7 @@ const props = defineProps<{
 }>()
 
 const emits = defineEmits<{
-  actionClicked: string
+  actionClicked: [linkTitle: string]
 }>()
 
 const emitActionClicked = (linkTitle: string) => {
@@ -22,7 +22,7 @@ const emitActionClicked = (linkTitle: string) => {
   <template v-for="link in links" :key="link.title">
     <RouterLink
       v-if="link.to"
-      exactActiveClass="text-primary bg-[#2F80ED]"
+      exactActiveClass="text-white bg-[#2F80ED]"
       :to="link.to"
       class="nav-link"
     >

@@ -11,11 +11,17 @@ const formData = ref({
 })
 
 const router = useRouter()
+const serverError = ref('')
 
 const signup = async () => {
-  const isRegistered = await register(formData.value)
+  serverError.value = ''
+  const result = await register(formData.value)
 
-  if (isRegistered) router.push('/')
+  if (result?.error) {
+    serverError.value = result.error.message ?? 'Registration failed'
+    return
+  }
+  router.push('/projects')
 }
 </script>
 
@@ -100,6 +106,9 @@ const signup = async () => {
               v-model="formData.confirmPassword"
             />
           </div>
+          <ul class="text-sm text-left text-red-500" v-if="serverError">
+            <li class="list-disc">{{ serverError }}</li>
+          </ul>
           <Button type="submit" class="w-full"> Register </Button>
           <!-- <Button variant="outline" class="w-full"> Login with Google </Button> -->
         </form>
