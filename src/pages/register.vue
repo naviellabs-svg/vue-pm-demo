@@ -21,7 +21,7 @@ const signup = async () => {
     serverError.value = result.error.message ?? 'Registration failed'
     return
   }
-  router.push('/projects')
+  router.push('/dashboard')
 }
 </script>
 

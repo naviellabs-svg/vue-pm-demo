@@ -24,7 +24,7 @@ const signin = async () => {
   serverError.value = ''
   const { error } = await login(formData.value)
 
-  if (!error) return router.push('/projects')
+  if (!error) return router.push('/dashboard')
 
   handelServerError(error)
 }

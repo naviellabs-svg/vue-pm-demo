@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// Landing page: only reached when unauthenticated (router redirects logged-in users to /projects)
+// Landing page: only reached when unauthenticated (router redirects logged-in users to /dashboard)
 const stack = [
   'Vue 3',
   'TypeScript',

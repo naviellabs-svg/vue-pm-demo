@@ -18,7 +18,7 @@ router.beforeEach(async (to) => {
   }
 
   if (authStore.user && (to.path === '/' || to.path === '/login' || to.path === '/register')) {
-    return { path: '/projects' }
+    return { path: '/dashboard' }
   }
 })
 export default router
