@@ -1,8 +1,17 @@
 <script setup lang="ts">
 import { myTasksWithProjectsQuery } from '@/utils/supaQueries'
 import type { TasksWithProjects } from '@/utils/supaQueries'
+import CardSparkline from '@/components/dashboard/CardSparkline.vue'
 
 usePageStore().pageData.title = 'Dashboard'
+
+// Subtle background sparklines per card (values 0–1)
+const sparklines = {
+  projects: [0.2, 0.35, 0.5, 0.55, 0.7, 0.85],
+  tasks: [0.4, 0.5, 0.45, 0.65, 0.6, 0.75],
+  completed: [0.15, 0.35, 0.55, 0.75, 0.9, 1],
+  overdue: [0.5, 0.4, 0.55, 0.45, 0.5, 0.4]
+}
 
 const auth = useAuthStore()
 const projectsLoader = useProjectsStore()
@@ -53,43 +62,47 @@ const upcomingTasks = computed(() => {
     </div>
 
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardHeader class="pb-2">
+      <Card class="relative overflow-hidden">
+        <CardSparkline :values="sparklines.projects" color="chart-1" />
+        <CardHeader class="pb-2 relative">
           <CardTitle class="text-sm font-medium text-muted-foreground">
             Projects
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent class="relative">
           <span class="text-2xl font-bold">{{ projectCount }}</span>
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader class="pb-2">
+      <Card class="relative overflow-hidden">
+        <CardSparkline :values="sparklines.tasks" color="chart-2" />
+        <CardHeader class="pb-2 relative">
           <CardTitle class="text-sm font-medium text-muted-foreground">
             My tasks
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent class="relative">
           <span class="text-2xl font-bold">{{ taskCount }}</span>
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader class="pb-2">
+      <Card class="relative overflow-hidden">
+        <CardSparkline :values="sparklines.completed" color="chart-3" />
+        <CardHeader class="pb-2 relative">
           <CardTitle class="text-sm font-medium text-muted-foreground">
             Completed
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent class="relative">
           <span class="text-2xl font-bold">{{ completedCount }}</span>
         </CardContent>
       </Card>
-      <Card>
-        <CardHeader class="pb-2">
+      <Card class="relative overflow-hidden">
+        <CardSparkline :values="sparklines.overdue" color="chart-4" />
+        <CardHeader class="pb-2 relative">
           <CardTitle class="text-sm font-medium text-muted-foreground">
             Overdue
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent class="relative">
           <span class="text-2xl font-bold">{{ overdueCount }}</span>
         </CardContent>
       </Card>

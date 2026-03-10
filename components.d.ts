@@ -28,6 +28,7 @@ declare module 'vue' {
     CardDescription: typeof import('./src/components/ui/card/CardDescription.vue')['default']
     CardFooter: typeof import('./src/components/ui/card/CardFooter.vue')['default']
     CardHeader: typeof import('./src/components/ui/card/CardHeader.vue')['default']
+    CardSparkline: typeof import('./src/components/dashboard/CardSparkline.vue')['default']
     CardTitle: typeof import('./src/components/ui/card/CardTitle.vue')['default']
     DataTable: typeof import('./src/components/ui/data-table/DataTable.vue')['default']
     DropdownMenu: typeof import('./src/components/ui/dropdown-menu/DropdownMenu.vue')['default']
