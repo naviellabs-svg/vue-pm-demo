@@ -22,5 +22,13 @@ await getGroupedCollabs(tasks.value ?? [])
 const columnsWithCollabs = columns(groupedCollabs)
 </script>
 <template>
-  <DataTable v-if="tasks" :columns="columnsWithCollabs" :data="tasks" />
+  <Card v-if="tasks && tasks.length === 0" class="max-w-lg">
+    <CardHeader>
+      <CardTitle>No tasks yet</CardTitle>
+      <CardDescription>
+        Use the sidebar to open Projects or My Tasks. Tasks assigned to you will appear here.
+      </CardDescription>
+    </CardHeader>
+  </Card>
+  <DataTable v-else-if="tasks" :columns="columnsWithCollabs" :data="tasks" />
 </template>

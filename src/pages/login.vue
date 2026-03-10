@@ -10,6 +10,7 @@ const formData = ref({
 const { serverError, handelServerError, realtimeErrors, handelLoginForm } = useFormerrors()
 
 const router = useRouter()
+const demoSigningIn = ref(false)
 
 watchDebounced(
   formData,
@@ -20,6 +21,7 @@ watchDebounced(
 )
 
 const signin = async () => {
+  serverError.value = ''
   const { error } = await login(formData.value)
 
   if (!error) return router.push('/projects')
@@ -27,11 +29,25 @@ const signin = async () => {
   handelServerError(error)
 }
 
-const fillDemo = () => {
+const demoLogin = async () => {
   const email = import.meta.env.VITE_DEMO_EMAIL as string | undefined
   const password = import.meta.env.VITE_DEMO_PASSWORD as string | undefined
-  if (email) formData.value.email = email
-  if (password) formData.value.password = password
+
+  if (!email || !password) {
+    serverError.value =
+      'Demo login is not configured. Set VITE_DEMO_EMAIL and VITE_DEMO_PASSWORD in your deploy environment and redeploy.'
+    return
+  }
+
+  formData.value.email = email
+  formData.value.password = password
+
+  demoSigningIn.value = true
+  try {
+    await signin()
+  } finally {
+    demoSigningIn.value = false
+  }
 }
 </script>
 
@@ -91,9 +107,10 @@ const fillDemo = () => {
             type="button"
             variant="outline"
             class="w-full"
-            @click="fillDemo"
+            :disabled="demoSigningIn"
+            @click="demoLogin"
           >
-            Fill demo
+            {{ demoSigningIn ? 'Signing in…' : 'Continue as demo' }}
           </Button>
         </form>
         <div class="mt-4 text-sm text-center">

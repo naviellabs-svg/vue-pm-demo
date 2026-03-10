@@ -18,5 +18,13 @@ const columnsWithCollabs = columns(groupedCollabs)
 
 </script>
 <template>
-  <DataTable v-if="projects" :columns="columnsWithCollabs" :data="projects" />
+  <Card v-if="projects && projects.length === 0" class="max-w-lg">
+    <CardHeader>
+      <CardTitle>No projects yet</CardTitle>
+      <CardDescription>
+        Use the sidebar to get started. Projects you’re added to will appear here.
+      </CardDescription>
+    </CardHeader>
+  </Card>
+  <DataTable v-else-if="projects" :columns="columnsWithCollabs" :data="projects" />
 </template>

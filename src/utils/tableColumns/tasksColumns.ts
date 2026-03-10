@@ -38,7 +38,18 @@ export const columns = (collabs: Ref<GroupedCollabs>): ColumnDef<TasksWithProjec
     accessorKey: 'due_date',
     header: () => h('div', { class: 'text-left' }, 'Due Date'),
     cell: ({ row }) => {
-      return h('div', { class: 'text-left font-medium' }, row.getValue('due_date'))
+      const dueDate = row.original.due_date
+      const today = new Date().toISOString().slice(0, 10)
+      const isOverdue = dueDate != null && dueDate < today
+      return h(
+        'div',
+        {
+          class: isOverdue
+            ? 'text-left font-medium text-destructive'
+            : 'text-left font-medium'
+        },
+        isOverdue ? 'Overdue' : dueDate ?? '—'
+      )
     }
   },
   {

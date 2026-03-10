@@ -16,7 +16,9 @@ For the live demo or local tryout, use a pre-defined account:
 - **Option B (Fill demo button):** Set in `.env` (or in Vercel env vars for production):
   - `VITE_DEMO_EMAIL` — demo user email
   - `VITE_DEMO_PASSWORD` — demo user password  
-  Then on the login page click **Fill demo** to pre-fill the form and log in with one click.
+  Then on the login page click **Continue as demo** to auto-fill and sign in.
+
+**Note (Vercel):** `VITE_*` variables are inlined at build time. After adding/changing `VITE_DEMO_EMAIL` / `VITE_DEMO_PASSWORD` in Vercel, you must **redeploy**, and you must set them for the right environment (**Production** vs **Preview**) depending on which URL you are testing.
 
 ---
 
